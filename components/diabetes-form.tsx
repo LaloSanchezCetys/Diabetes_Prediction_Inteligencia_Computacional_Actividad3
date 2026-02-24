@@ -183,6 +183,15 @@ export function DiabetesForm() {
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-8">
+          {/* Medical Disclaimer */}
+          <Alert className="mb-6 border-destructive/50 bg-destructive/5">
+            <AlertCircle className="h-4 w-4 text-destructive" />
+            <AlertTitle className="ml-2">Medical Disclaimer</AlertTitle>
+            <AlertDescription className="ml-2 mt-2 text-sm">
+              This prediction tool is for <strong>educational purposes only</strong> and should not be used as a substitute for professional medical advice. Always consult with a healthcare professional for proper diagnosis and treatment.
+            </AlertDescription>
+          </Alert>
+
           {/* Dataset Information */}
           <Alert className="mb-6 border-accent/50 bg-accent/5">
             <AlertCircle className="h-4 w-4 text-accent" />

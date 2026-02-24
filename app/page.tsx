@@ -14,13 +14,6 @@ export default function Home() {
         </div>
         
         <DiabetesForm />
-
-        <div className="mt-8 text-center text-sm text-muted-foreground">
-          <p>
-            <strong>Disclaimer:</strong> This prediction tool is for educational purposes only and should not be used as a substitute for professional medical advice. 
-            Always consult with a healthcare professional for proper diagnosis and treatment.
-          </p>
-        </div>
       </div>
     </main>
   )
