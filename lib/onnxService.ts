@@ -33,6 +33,19 @@ export async function makePrediction(
     await initializeModel();
   }
 
+  // Log input data
+  const inputData = {
+    pregnancies,
+    glucose,
+    bloodPressure,
+    skinThickness,
+    insulin,
+    bmi,
+    diabetesPedigreeFunction,
+    age
+  };
+  console.log('Model Input Data:', inputData);
+
   try {
     // Create input tensors - each input should be [1, 1] for a single sample
     const inputs: Record<string, ort.Tensor> = {
@@ -61,7 +74,13 @@ export async function makePrediction(
       console.warn(`Unexpected model output: ${rawPrediction}, rounding to nearest class`);
     }
     
-    return (Math.round(rawPrediction) as 0 | 1);
+    const prediction = (Math.round(rawPrediction) as 0 | 1);
+    
+    // Log prediction result
+    const predictionLabel = prediction === 1 ? 'Diabetes (1)' : 'No Diabetes (0)';
+    console.log('Model Prediction:', prediction, `(${predictionLabel})`);
+    
+    return prediction;
   } catch (error) {
     console.error('Prediction error:', error);
     throw new Error('Failed to make prediction with the model.');
