@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Spinner } from '@/components/ui/spinner'
 import { AlertCircle, CheckCircle2, AlertTriangle, Plus, Minus } from 'lucide-react'
+import { initializeModel, makePrediction } from '@/lib/onnxService'
 
 interface PredictionResult {
   prediction: 0 | 1
@@ -45,21 +46,21 @@ export function DiabetesForm() {
 
   useEffect(() => {
     // Initialize ONNX Runtime
-    const initializeModel = async () => {
+    const initModel = async () => {
       try {
-        // The model will be loaded on first prediction
+        await initializeModel()
         setModelLoaded(true)
       } catch (error) {
         console.error('Failed to initialize model:', error)
         setResult({
           prediction: 0,
           status: 'error',
-          message: 'Failed to load the ML model'
+          message: 'Failed to load the ML model. Please refresh the page.'
         })
       }
     }
 
-    initializeModel()
+    initModel()
   }, [])
 
   const validateInput = (field: keyof typeof FIELD_RANGES, value: string): string | null => {
@@ -115,8 +116,7 @@ export function DiabetesForm() {
     setResult(null)
 
     try {
-      // Simulate model prediction with ONNX
-      // In a real scenario, you would load the actual ONNX model here
+      // Use real ONNX model for prediction
       const inputData = [
         parseFloat(formData.pregnancies),
         parseFloat(formData.glucose),
@@ -128,9 +128,16 @@ export function DiabetesForm() {
         parseFloat(formData.age)
       ]
 
-      // Simulate a prediction (replace with actual ONNX inference)
-      // For now, we'll use a simple mock prediction
-      const prediction = await simulatePrediction(inputData)
+      const prediction = await makePrediction(
+        inputData[0],
+        inputData[1],
+        inputData[2],
+        inputData[3],
+        inputData[4],
+        inputData[5],
+        inputData[6],
+        inputData[7]
+      )
 
       setResult({
         prediction,
@@ -149,25 +156,6 @@ export function DiabetesForm() {
     } finally {
       setLoading(false)
     }
-  }
-
-  const simulatePrediction = async (inputData: number[]): Promise<0 | 1> => {
-    // This is a placeholder for actual ONNX model inference
-    // In production, you would use onnxruntime-web to load and run the actual model
-    
-    // Simple mock prediction based on glucose and BMI
-    const glucose = inputData[1]
-    const bmi = inputData[5]
-    
-    // Mock logic: if glucose > 125 or BMI > 30, higher diabetes risk
-    let probability = 0.3
-    if (glucose > 125) probability += 0.2
-    if (bmi > 30) probability += 0.2
-    if (inputData[0] > 5) probability += 0.1 // pregnancies
-    
-    probability = Math.min(0.95, probability)
-    
-    return probability > 0.5 ? 1 : 0
   }
 
   const handleReset = () => {
