@@ -7,11 +7,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Spinner } from '@/components/ui/spinner'
-import { AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { AlertCircle, CheckCircle2, AlertTriangle, Plus, Minus } from 'lucide-react'
 
 interface PredictionResult {
-  prediction: number
-  probability: number
+  prediction: 0 | 1
   status: 'success' | 'error'
   message: string
 }
@@ -54,7 +53,6 @@ export function DiabetesForm() {
         console.error('Failed to initialize model:', error)
         setResult({
           prediction: 0,
-          probability: 0,
           status: 'error',
           message: 'Failed to load the ML model'
         })
@@ -127,21 +125,19 @@ export function DiabetesForm() {
 
       // Simulate a prediction (replace with actual ONNX inference)
       // For now, we'll use a simple mock prediction
-      const mockPrediction = await simulatePrediction(inputData)
+      const prediction = await simulatePrediction(inputData)
 
       setResult({
-        prediction: mockPrediction.prediction,
-        probability: mockPrediction.probability,
+        prediction,
         status: 'success',
-        message: mockPrediction.prediction === 1 
-          ? `Based on the provided health metrics, the model predicts a ${(mockPrediction.probability * 100).toFixed(1)}% probability of diabetes.`
-          : `Based on the provided health metrics, the model predicts a ${((1 - mockPrediction.probability) * 100).toFixed(1)}% probability of no diabetes.`
+        message: prediction === 1 
+          ? 'Based on the provided health metrics, the model predicts that diabetes is present.'
+          : 'Based on the provided health metrics, the model predicts that diabetes is not present.'
       })
     } catch (error) {
       console.error('Prediction error:', error)
       setResult({
         prediction: 0,
-        probability: 0,
         status: 'error',
         message: 'An error occurred during prediction. Please try again.'
       })
@@ -150,7 +146,7 @@ export function DiabetesForm() {
     }
   }
 
-  const simulatePrediction = async (inputData: number[]): Promise<{ prediction: number; probability: number }> => {
+  const simulatePrediction = async (inputData: number[]): Promise<0 | 1> => {
     // This is a placeholder for actual ONNX model inference
     // In production, you would use onnxruntime-web to load and run the actual model
     
@@ -165,9 +161,8 @@ export function DiabetesForm() {
     if (inputData[0] > 5) probability += 0.1 // pregnancies
     
     probability = Math.min(0.95, probability)
-    const prediction = probability > 0.5 ? 1 : 0
     
-    return { prediction, probability }
+    return probability > 0.5 ? 1 : 0
   }
 
   const handleReset = () => {
@@ -225,28 +220,77 @@ export function DiabetesForm() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* First Row */}
             <div className="grid gap-4 md:grid-cols-2">
-              {(['pregnancies', 'glucose'] as const).map((field) => (
-                <div key={field} className="space-y-2">
-                  <Label htmlFor={field} className="font-semibold">
-                    {FIELD_RANGES[field].label}
-                  </Label>
+              {/* Pregnancies Stepper */}
+              <div className="space-y-2">
+                <Label htmlFor="pregnancies" className="font-semibold">
+                  {FIELD_RANGES.pregnancies.label}
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const current = parseInt(formData.pregnancies) || 0
+                      const newValue = Math.max(0, current - 1)
+                      setFormData(prev => ({ ...prev, pregnancies: newValue.toString() }))
+                    }}
+                    disabled={loading || !modelLoaded || (parseInt(formData.pregnancies) || 0) <= 0}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
                   <Input
-                    id={field}
-                    name={field}
+                    id="pregnancies"
+                    name="pregnancies"
                     type="number"
-                    step={field === 'bmi' || field === 'diabetesPedigreeFunction' ? '0.01' : '1'}
-                    placeholder={`${FIELD_RANGES[field].min} - ${FIELD_RANGES[field].max}`}
-                    value={formData[field]}
+                    step="1"
+                    placeholder="0"
+                    value={formData.pregnancies}
                     onChange={handleInputChange}
-                    className={validationErrors[field] ? 'border-destructive' : ''}
+                    className={`text-center ${validationErrors.pregnancies ? 'border-destructive' : ''}`}
                     disabled={loading || !modelLoaded}
                   />
-                  <p className="text-xs text-muted-foreground">{FIELD_RANGES[field].description}</p>
-                  {validationErrors[field] && (
-                    <p className="text-xs text-destructive">{validationErrors[field]}</p>
-                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const current = parseInt(formData.pregnancies) || 0
+                      const newValue = Math.min(17, current + 1)
+                      setFormData(prev => ({ ...prev, pregnancies: newValue.toString() }))
+                    }}
+                    disabled={loading || !modelLoaded || (parseInt(formData.pregnancies) || 0) >= 17}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
-              ))}
+                <p className="text-xs text-muted-foreground">{FIELD_RANGES.pregnancies.description}</p>
+                {validationErrors.pregnancies && (
+                  <p className="text-xs text-destructive">{validationErrors.pregnancies}</p>
+                )}
+              </div>
+
+              {/* Glucose */}
+              <div className="space-y-2">
+                <Label htmlFor="glucose" className="font-semibold">
+                  {FIELD_RANGES.glucose.label}
+                </Label>
+                <Input
+                  id="glucose"
+                  name="glucose"
+                  type="number"
+                  step="any"
+                  placeholder={`${FIELD_RANGES.glucose.min} - ${FIELD_RANGES.glucose.max}`}
+                  value={formData.glucose}
+                  onChange={handleInputChange}
+                  className={validationErrors.glucose ? 'border-destructive' : ''}
+                  disabled={loading || !modelLoaded}
+                />
+                <p className="text-xs text-muted-foreground">{FIELD_RANGES.glucose.description}</p>
+                {validationErrors.glucose && (
+                  <p className="text-xs text-destructive">{validationErrors.glucose}</p>
+                )}
+              </div>
             </div>
 
             {/* Second Row */}
@@ -260,7 +304,7 @@ export function DiabetesForm() {
                     id={field}
                     name={field}
                     type="number"
-                    step="1"
+                    step="any"
                     placeholder={`${FIELD_RANGES[field].min} - ${FIELD_RANGES[field].max}`}
                     value={formData[field]}
                     onChange={handleInputChange}
@@ -286,7 +330,7 @@ export function DiabetesForm() {
                     id={field}
                     name={field}
                     type="number"
-                    step={field === 'bmi' ? '0.1' : '1'}
+                    step="any"
                     placeholder={`${FIELD_RANGES[field].min} - ${FIELD_RANGES[field].max}`}
                     value={formData[field]}
                     onChange={handleInputChange}
@@ -312,7 +356,7 @@ export function DiabetesForm() {
                     id={field}
                     name={field}
                     type="number"
-                    step={field === 'diabetesPedigreeFunction' ? '0.01' : '1'}
+                    step="any"
                     placeholder={`${FIELD_RANGES[field].min} - ${FIELD_RANGES[field].max}`}
                     value={formData[field]}
                     onChange={handleInputChange}
@@ -359,40 +403,19 @@ export function DiabetesForm() {
           {result && (
             <div className="mt-8 space-y-4">
               {result.status === 'success' ? (
-                <>
-                  <Alert className={`border-2 ${result.prediction === 1 ? 'border-destructive/50 bg-destructive/5' : 'border-emerald-500/50 bg-emerald-500/5'}`}>
-                    {result.prediction === 1 ? (
-                      <AlertTriangle className="h-5 w-5 text-destructive" />
-                    ) : (
-                      <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                    )}
-                    <AlertTitle className="ml-2">
-                      {result.prediction === 1 ? 'Higher Risk Detected' : 'Lower Risk Indicated'}
-                    </AlertTitle>
-                    <AlertDescription className="ml-2 mt-2">
-                      {result.message}
-                    </AlertDescription>
-                  </Alert>
-                  <Card className="bg-muted/30">
-                    <CardHeader>
-                      <CardTitle className="text-sm">Prediction Details</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="font-semibold">Diabetes Risk Probability:</span>
-                        <span className="font-mono font-bold text-accent">
-                          {(result.probability * 100).toFixed(1)}%
-                        </span>
-                      </div>
-                      <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                        <div
-                          className={`h-full ${result.probability > 0.5 ? 'bg-destructive' : 'bg-emerald-600'}`}
-                          style={{ width: `${result.probability * 100}%` }}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </>
+                <Alert className={`border-2 ${result.prediction === 1 ? 'border-destructive/50 bg-destructive/5' : 'border-emerald-500/50 bg-emerald-500/5'}`}>
+                  {result.prediction === 1 ? (
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                  ) : (
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                  )}
+                  <AlertTitle className="ml-2">
+                    {result.prediction === 1 ? 'Diabetes Predicted' : 'No Diabetes Predicted'}
+                  </AlertTitle>
+                  <AlertDescription className="ml-2 mt-2">
+                    {result.message}
+                  </AlertDescription>
+                </Alert>
               ) : (
                 <Alert className="border-destructive/50 bg-destructive/5">
                   <AlertCircle className="h-5 w-5 text-destructive" />
