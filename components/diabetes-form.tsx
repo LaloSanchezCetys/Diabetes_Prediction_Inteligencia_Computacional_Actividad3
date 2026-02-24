@@ -170,6 +170,21 @@ export function DiabetesForm() {
     return { prediction, probability }
   }
 
+  const handleReset = () => {
+    setFormData({
+      pregnancies: '',
+      glucose: '',
+      bloodPressure: '',
+      skinThickness: '',
+      insulin: '',
+      bmi: '',
+      diabetesPedigreeFunction: '',
+      age: ''
+    })
+    setResult(null)
+    setValidationErrors({})
+  }
+
   return (
     <div className="w-full">
       <Card className="border-2 border-primary">
@@ -312,21 +327,32 @@ export function DiabetesForm() {
               ))}
             </div>
 
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2 h-auto text-base"
-              disabled={loading || !modelLoaded}
-            >
-              {loading ? (
-                <div className="flex items-center gap-2">
-                  <Spinner className="h-4 w-4" />
-                  Predicting...
-                </div>
-              ) : (
-                'Get Prediction'
-              )}
-            </Button>
+            {/* Submit and Reset Buttons */}
+            <div className="flex gap-3">
+              <Button
+                type="submit"
+                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2 h-auto text-base"
+                disabled={loading || !modelLoaded}
+              >
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <Spinner className="h-4 w-4" />
+                    Predicting...
+                  </div>
+                ) : (
+                  'Get Prediction'
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 font-semibold py-2 h-auto text-base"
+                onClick={handleReset}
+                disabled={loading || !modelLoaded}
+              >
+                Reset Form
+              </Button>
+            </div>
           </form>
 
           {/* Result Display */}
