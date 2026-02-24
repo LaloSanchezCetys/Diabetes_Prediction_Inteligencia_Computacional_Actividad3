@@ -69,6 +69,11 @@ export function DiabetesForm() {
     const numValue = parseFloat(value)
     if (isNaN(numValue)) return `${range.label} must be a valid number`
 
+    // Pregnancies must be an integer
+    if (field === 'pregnancies' && !Number.isInteger(numValue)) {
+      return `${range.label} must be a whole number`
+    }
+
     if (numValue < range.min || numValue > range.max) {
       return `${range.label} must be between ${range.min} and ${range.max}`
     }
